@@ -12,12 +12,14 @@
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+
    ```
 
 3. **Run development server:**
    ```bash
    npm run dev
    ```
+
 
 4. **Build for production:**
    ```bash
