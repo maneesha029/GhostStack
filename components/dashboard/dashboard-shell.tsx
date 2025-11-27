@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { WebContainerIDE } from '@/components/ide/webcontainer-ide'
 import { DashboardOverview } from '@/components/dashboard/dashboard-overview'
 import { MentorChatbot } from '@/components/mentor/mentor-chatbot'
@@ -10,14 +10,23 @@ import { Button } from '@/components/ui/button'
 import { FileText, Folder, Settings, Home } from 'lucide-react'
 
 export function DashboardShell() {
-  const { files, setActiveFile, currentProject } = useWorkspaceStore()
+  const { files, setActiveFile, currentProject, activeFile } = useWorkspaceStore()
   const [showTestPanel, setShowTestPanel] = useState(false)
-  const [view, setView] = useState<'overview' | 'ide'>(
-    currentProject ? 'ide' : 'overview'
-  )
+  const [view, setView] = useState<'overview' | 'ide'>('overview')
 
   const fileList = Object.keys(files)
   const hasProject = currentProject && fileList.length > 0
+
+  // Auto-switch to IDE view when project is loaded
+  useEffect(() => {
+    if (hasProject && view === 'overview') {
+      setView('ide')
+      // Set first file as active if none is selected
+      if (!activeFile && fileList.length > 0) {
+        setActiveFile(fileList[0])
+      }
+    }
+  }, [hasProject, fileList.length, view, activeFile, setActiveFile, fileList])
 
   if (view === 'overview' || !hasProject) {
     return (

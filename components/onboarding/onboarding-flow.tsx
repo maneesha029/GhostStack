@@ -54,13 +54,28 @@ export function OnboardingFlow() {
           setCurrentProject('project-1')
           updateFile('ghost-server/index.js', mockData.code)
           updateFile('README.md', '# GhostStack Project\n\nGenerated mock server')
-
-          router.push('/dashboard')
+          
+          // Small delay to ensure state is updated
+          setTimeout(() => {
+            router.push('/dashboard')
+          }, 100)
+        } else {
+          console.error('Failed to generate mock server:', mockData.error)
+          setIsScanning(false)
+          setStep('input')
+          alert('Failed to generate mock server. Please try again.')
         }
+      } else {
+        console.error('Failed to scan repository:', data.error)
+        setIsScanning(false)
+        setStep('input')
+        alert('Failed to scan repository. Please check the URL and try again.')
       }
     } catch (error) {
       console.error('Error scanning repo:', error)
       setIsScanning(false)
+      setStep('input')
+      alert('An error occurred while scanning the repository. Please try again.')
     }
   }
 
