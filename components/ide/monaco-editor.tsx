@@ -5,8 +5,15 @@ import dynamic from 'next/dynamic'
 
 // Dynamic import to reduce bundle size
 const MonacoEditorComponent = dynamic(
-  () => import('@monaco-editor/react').then((mod) => mod.default),
-  { ssr: false }
+  () => import('@monaco-editor/react'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full w-full items-center justify-center bg-gray-950 text-gray-400">
+        Loading editor...
+      </div>
+    )
+  }
 )
 
 interface MonacoEditorProps {
@@ -49,6 +56,9 @@ export function MonacoEditor({
         lineNumbers: 'on',
         scrollBeyondLastLine: false,
         automaticLayout: true,
+        wordWrap: 'on',
+        formatOnPaste: true,
+        formatOnType: true,
       }}
     />
   )

@@ -8,6 +8,7 @@ import { TestScenarioPanel } from '@/components/test-scenarios/test-scenario-pan
 import { useWorkspaceStore } from '@/lib/stores/workspace-store'
 import { Button } from '@/components/ui/button'
 import { FileText, Folder, Settings, Home } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export function DashboardShell() {
   const { files, setActiveFile, currentProject, activeFile } = useWorkspaceStore()
@@ -38,7 +39,7 @@ export function DashboardShell() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-gray-950">
+    <div className="flex h-screen flex-col bg-gray-950 overflow-hidden">
       <header className="border-b border-gray-800 bg-gray-900 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -71,7 +72,7 @@ export function DashboardShell() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-64 border-r border-gray-800 bg-gray-900 p-4">
+        <aside className="w-64 flex-shrink-0 border-r border-gray-800 bg-gray-900 p-4 overflow-y-auto">
           <div className="mb-4">
             <h2 className="mb-2 text-sm font-semibold text-gray-400">Files</h2>
             <div className="space-y-1">
@@ -82,10 +83,15 @@ export function DashboardShell() {
                   <button
                     key={file}
                     onClick={() => setActiveFile(file)}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-300 hover:bg-gray-800"
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
+                      activeFile === file
+                        ? "bg-purple-600/20 text-purple-400 border border-purple-600/30"
+                        : "text-gray-300 hover:bg-gray-800"
+                    )}
                   >
-                    <FileText className="h-4 w-4" />
-                    {file}
+                    <FileText className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{file}</span>
                   </button>
                 ))
               )}

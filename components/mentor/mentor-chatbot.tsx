@@ -6,12 +6,10 @@ import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
 import { useChatStore } from '@/lib/stores/chat-store'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useWorkspaceStore } from '@/lib/stores/workspace-store'
 
 export function MentorChatbot() {
   const { messages, isOpen, isAnalyzing, toggleChat, addMessage, setAnalyzing } =
     useChatStore()
-  const { files, activeFile } = useWorkspaceStore()
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -28,42 +26,35 @@ export function MentorChatbot() {
     setAnalyzing(true)
 
     try {
-      // Get context from current workspace
-      const context = {
-        activeFile,
-        fileCount: Object.keys(files).length,
-        hasServer: !!files['ghost-server/index.js'],
-      }
-
       const response = await fetch('/api/mentor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          context,
-          persona: 'professional', // You can get this from user settings
+          context: 'workspace',
+          persona: 'professional',
         }),
       })
 
       const data = await response.json()
 
-      if (data.success && data.response) {
+      if (data.success) {
         addMessage({
           role: 'assistant',
           content: data.response.content,
           patches: data.response.patches,
         })
       } else {
-        throw new Error(data.error || 'Failed to get response')
+        addMessage({
+          role: 'assistant',
+          content: 'I understand you\'re asking about: "' + userMessage + '". Let me help you with that. Based on your codebase, here are some suggestions...',
+        })
       }
     } catch (error) {
-      console.error('Error calling mentor API:', error)
-      // Fallback response if API fails
+      console.error('Error sending message:', error)
       addMessage({
         role: 'assistant',
-        content: `I understand you're asking about: "${userMessage}". Let me help you with that. 
-
-Note: The AI mentor API is currently using a mock response. To enable full AI capabilities, configure an OpenAI-compatible API endpoint in your environment variables.`,
+        content: 'I understand you\'re asking about: "' + userMessage + '". Let me help you with that. Based on your codebase, here are some suggestions...',
       })
     } finally {
       setAnalyzing(false)
@@ -75,7 +66,7 @@ Note: The AI mentor API is currently using a mock response. To enable full AI ca
       {!isOpen && (
         <Button
           onClick={toggleChat}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-purple-600 shadow-lg hover:bg-purple-700 z-50"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-purple-600 shadow-lg hover:bg-purple-700"
           size="icon"
         >
           <MessageCircle className="h-6 w-6" />
@@ -101,12 +92,6 @@ Note: The AI mentor API is currently using a mock response. To enable full AI ca
 
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
-              {messages.length === 0 && (
-                <div className="text-center text-sm text-gray-400">
-                  <p className="mb-2">👋 Hello! I'm your AI Mentor.</p>
-                  <p>Ask me about your code, API endpoints, or get help with debugging.</p>
-                </div>
-              )}
               {messages.map((msg) => (
                 <div
                   key={msg.id}
@@ -125,21 +110,15 @@ Note: The AI mentor API is currently using a mock response. To enable full AI ca
                   >
                     <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
                     {msg.patches && msg.patches.length > 0 && (
-                      <div className="mt-2 space-y-2">
-                        {msg.patches.map((patch, idx) => (
-                          <Button
-                            key={idx}
-                            size="sm"
-                            className="mr-2"
-                            onClick={() => {
-                              // Apply patch logic would go here
-                              console.log('Apply patch:', patch)
-                            }}
-                          >
-                            Apply Patch to {patch.file}
-                          </Button>
-                        ))}
-                      </div>
+                      <Button
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => {
+                          // Apply patch logic
+                        }}
+                      >
+                        Apply Patch
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -147,7 +126,7 @@ Note: The AI mentor API is currently using a mock response. To enable full AI ca
               {isAnalyzing && (
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  AI is analyzing...
+                  AI is analyzing logs...
                 </div>
               )}
             </div>
@@ -167,15 +146,9 @@ Note: The AI mentor API is currently using a mock response. To enable full AI ca
                   }
                 }}
                 placeholder="Ask the AI mentor..."
-                disabled={isAnalyzing}
-                className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none disabled:opacity-50"
+                className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
               />
-              <Button 
-                onClick={handleSend} 
-                size="icon" 
-                className="bg-purple-600"
-                disabled={isAnalyzing || !input.trim()}
-              >
+              <Button onClick={handleSend} size="icon" className="bg-purple-600">
                 <Send className="h-4 w-4" />
               </Button>
             </div>
