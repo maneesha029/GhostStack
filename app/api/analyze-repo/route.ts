@@ -16,12 +16,11 @@ export async function POST(request: NextRequest) {
     const scanned = await scanRepository(repoUrl || file)
 
     return NextResponse.json({ success: true, data: scanned })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error analyzing repo:', error)
-    return NextResponse.json(
-      { error: 'Failed to analyze repository' },
-      { status: 500 }
-    )
+    // In development, include the error message to help debugging.
+    const message = process.env.NODE_ENV === 'production' ? 'Failed to analyze repository' : (error?.message || String(error))
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 
