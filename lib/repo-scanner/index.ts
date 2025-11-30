@@ -12,7 +12,19 @@ export interface ScannedRepo {
   interfaces: Array<{ name: string; definition: string }>
   fetchCalls: Array<{ url: string; method: string; body?: any }>
   axiosCalls: Array<{ url: string; method: string; body?: any }>
+  // New fields for enhanced analysis
+  repoMetadata?: {
+    name: string
+    description: string
+    languages: Record<string, number>
+    stars: number
+    forks: number
+    watchers: number
+    contributors: number
+    isActive: boolean
+  }
 }
+
 
 export async function scanRepository(
   repoUrl: string | File
@@ -47,15 +59,44 @@ export async function scanRepository(
     return res.json()
   }
 
-  // Determine branch: if not provided, fetch repo metadata to get default_branch
-  if (!branch) {
-    try {
-      const repoMeta = await fetchJson(`https://api.github.com/repos/${owner}/${repo}`)
-      branch = repoMeta.default_branch || 'main'
-    } catch (err) {
-      // If metadata fetch fails, fall back to main/master heuristics
-      branch = 'main'
+  // Fetch repo metadata (name, description, stars, forks, etc.)
+  let repoMetadata: any = null
+  try {
+    repoMetadata = await fetchJson(`https://api.github.com/repos/${owner}/${repo}`)
+  } catch (err) {
+    console.warn('Failed to fetch repo metadata:', err)
+  }
+
+  // Determine branch: if not provided, use repo default_branch
+  if (!branch && repoMetadata?.default_branch) {
+    branch = repoMetadata.default_branch
+  } else if (!branch) {
+    branch = 'main'
+  }
+
+  // Fetch languages used in repo
+  let languages: Record<string, number> = {}
+  try {
+    languages = await fetchJson(`https://api.github.com/repos/${owner}/${repo}/languages`)
+  } catch (err) {
+    console.warn('Failed to fetch languages:', err)
+  }
+
+  // Fetch commit activity (check if repo is active)
+  let isActive = true
+  try {
+    const commits = await fetchJson(
+      `https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`
+    )
+    const lastCommitDate = commits[0]?.commit?.author?.date
+    if (lastCommitDate) {
+      const daysSinceLastCommit = Math.floor(
+        (Date.now() - new Date(lastCommitDate).getTime()) / (1000 * 60 * 60 * 24)
+      )
+      isActive = daysSinceLastCommit < 365 // Consider active if commit within last year
     }
+  } catch (err) {
+    console.warn('Failed to fetch commit activity:', err)
   }
 
   // Get repo tree (recursive). Try branch, fall back to master.
@@ -80,7 +121,7 @@ export async function scanRepository(
 
   const codeFiles = files
     .map((f: any) => f.path)
-    .filter((p: string) => /\.(js|ts|tsx|jsx|mjs|cjs)$/.test(p))
+    .filter((p: string) => /\.(js|ts|tsx|jsx|mjs|cjs|py|java|go|rb|php|swift|kotlin)$/.test(p))
 
   // Limit how many files we download to avoid long-running scans
   const maxFiles = 50
@@ -165,6 +206,18 @@ export async function scanRepository(
     interfaces,
     fetchCalls: fetchCalls.map(({ url, method, file }) => ({ url, method, body: undefined })),
     axiosCalls: axiosCalls.map(({ url, method, file }) => ({ url, method, body: undefined })),
+    repoMetadata: repoMetadata
+      ? {
+          name: repoMetadata.name,
+          description: repoMetadata.description || '',
+          languages,
+          stars: repoMetadata.stargazers_count || 0,
+          forks: repoMetadata.forks_count || 0,
+          watchers: repoMetadata.watchers_count || 0,
+          contributors: repoMetadata.network_count || 0,
+          isActive,
+        }
+      : undefined,
   }
 }
 
