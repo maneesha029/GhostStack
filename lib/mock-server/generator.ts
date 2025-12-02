@@ -81,18 +81,31 @@ function getSampleValue(type: string): any {
 
 function generateContextualData(path: string): any {
   const pathLower = path.toLowerCase()
+  const timestamp = new Date().toISOString()
 
-  // Image processing endpoints
+  // Root endpoint with expires parameter
+  if (pathLower === '/' || pathLower.includes('?expires')) {
+    return {
+      requestId: 'req_' + Math.random().toString(36).substr(2, 9),
+      expiresIn: '1d',
+      data: 'Sample response',
+      status: 'success',
+      timestamp,
+    }
+  }
+
+  // Upload endpoints
   if (pathLower.includes('upload')) {
     return {
       fileId: 'file_' + Math.random().toString(36).substr(2, 9),
       fileName: 'image.webp',
       size: 1024 * 512,
-      uploadedAt: new Date().toISOString(),
+      uploadedAt: timestamp,
       status: 'success',
     }
   }
 
+  // Upscale endpoints
   if (pathLower.includes('upscale')) {
     return {
       originalUrl: 'https://cdn.example.com/original.webp',
@@ -103,6 +116,7 @@ function generateContextualData(path: string): any {
     }
   }
 
+  // WebP to MP4 conversion endpoints
   if (pathLower.includes('webp-to-mp4')) {
     return {
       videoUrl: 'https://cdn.example.com/animation.mp4',
@@ -111,9 +125,11 @@ function generateContextualData(path: string): any {
       resolution: '1280x720',
       fileSize: 2048576,
       status: 'ready',
+      timestamp,
     }
   }
 
+  // WebP to PNG conversion endpoints
   if (pathLower.includes('webp-to-png')) {
     return {
       imageUrl: 'https://cdn.example.com/converted.png',
@@ -122,6 +138,7 @@ function generateContextualData(path: string): any {
       width: 1920,
       height: 1080,
       status: 'converted',
+      timestamp,
     }
   }
 
@@ -129,7 +146,7 @@ function generateContextualData(path: string): any {
   return {
     data: 'Sample response',
     status: 'success',
-    timestamp: new Date().toISOString(),
+    timestamp,
   }
 }
 

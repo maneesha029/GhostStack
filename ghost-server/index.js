@@ -36,39 +36,31 @@ app.use((req, res, next) => {
 // Helper function to generate contextual sample data
 function getContextualResponse(path) {
   const pathLower = path.toLowerCase();
+  const timestamp = new Date().toISOString();
 
-  if (pathLower.includes('webp-to-mp4')) {
+  // Root endpoint with expires parameter
+  if (pathLower === '/' || pathLower.includes('?expires')) {
     return {
-      videoUrl: 'https://cdn.example.com/animation.mp4',
-      duration: 5.2,
-      format: 'mp4',
-      resolution: '1280x720',
-      fileSize: 2048576,
-      status: 'ready',
+      requestId: 'req_' + Math.random().toString(36).substr(2, 9),
+      expiresIn: '1d',
+      data: 'Sample response',
+      status: 'success',
+      timestamp,
     };
   }
 
-  if (pathLower.includes('webp-to-png')) {
-    return {
-      imageUrl: 'https://cdn.example.com/converted.png',
-      originalFormat: 'webp',
-      newFormat: 'png',
-      width: 1920,
-      height: 1080,
-      status: 'converted',
-    };
-  }
-
-  if (pathLower.includes('upload') && pathLower.includes('v1')) {
+  // Upload endpoints (both /upload and /v1/upload)
+  if (pathLower.includes('upload')) {
     return {
       fileId: 'file_' + Math.random().toString(36).substr(2, 9),
       fileName: 'image.webp',
       size: 524288,
-      uploadedAt: new Date().toISOString(),
+      uploadedAt: timestamp,
       status: 'success',
     };
   }
 
+  // Upscale endpoints
   if (pathLower.includes('upscale')) {
     return {
       originalUrl: 'https://cdn.example.com/original.webp',
@@ -79,20 +71,37 @@ function getContextualResponse(path) {
     };
   }
 
-  if (pathLower.includes('upload')) {
+  // WebP to MP4 conversion endpoints
+  if (pathLower.includes('webp-to-mp4')) {
     return {
-      fileId: 'file_' + Math.random().toString(36).substr(2, 9),
-      fileName: 'image.webp',
-      size: 524288,
-      uploadedAt: new Date().toISOString(),
-      status: 'success',
+      videoUrl: 'https://cdn.example.com/animation.mp4',
+      duration: 5.2,
+      format: 'mp4',
+      resolution: '1280x720',
+      fileSize: 2048576,
+      status: 'ready',
+      timestamp,
     };
   }
 
+  // WebP to PNG conversion endpoints
+  if (pathLower.includes('webp-to-png')) {
+    return {
+      imageUrl: 'https://cdn.example.com/converted.png',
+      originalFormat: 'webp',
+      newFormat: 'png',
+      width: 1920,
+      height: 1080,
+      status: 'converted',
+      timestamp,
+    };
+  }
+
+  // Default response
   return {
     data: 'Sample response',
     status: 'success',
-    timestamp: new Date().toISOString(),
+    timestamp,
   };
 }
 
